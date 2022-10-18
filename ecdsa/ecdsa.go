@@ -58,7 +58,7 @@ type PrivateKey struct {
 
 func (p *PrivateKey) Derive(index uint32) (hdw.PrivateKey, error) {
 	data := make([]byte, 37)
-	if index&hdw.BIP32Hard != 0 { // hardened derivation
+	if index&hdw.Hard != 0 { // hardened derivation
 		copy(data[1:], p.D.Bytes())
 	} else {
 		copy(data, elliptic.MarshalCompressed(p.Curve, p.X, p.Y))
@@ -98,6 +98,14 @@ func (p *PrivateKey) Derive(index uint32) (hdw.PrivateKey, error) {
 	}, nil
 }
 
+func (s *PrivateKey) DerivePath(path hdw.Path) (hdw.PrivateKey, error) {
+	if k, err := hdw.Derive(s, path); err != nil {
+		return nil, err
+	} else {
+		return k.(hdw.PrivateKey), nil
+	}
+}
+
 func (p *PrivateKey) Bytes() []byte {
 	out := make([]byte, 32)
 	d := p.D.Bytes()
@@ -126,7 +134,7 @@ type PublicKey struct {
 }
 
 func (p *PublicKey) Derive(index uint32) (hdw.PublicKey, error) {
-	if index&hdw.BIP32Hard != 0 {
+	if index&hdw.Hard != 0 {
 		return nil, hdw.ErrHardenedPublic
 	}
 
@@ -173,6 +181,14 @@ func (p *PublicKey) Chain() []byte {
 
 func (p *PublicKey) Naked() crypto.PublicKey {
 	return &p.PublicKey
+}
+
+func (s *PublicKey) DerivePath(path hdw.Path) (hdw.PublicKey, error) {
+	if k, err := hdw.Derive(s, path); err != nil {
+		return nil, err
+	} else {
+		return k.(hdw.PublicKey), nil
+	}
 }
 
 func NewKeyFromSeedWithHMACKey(seed []byte, curve elliptic.Curve, key string) *PrivateKey {

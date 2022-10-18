@@ -3,6 +3,7 @@ package hdw
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,4 +16,52 @@ func TestSeed(t *testing.T) {
 		0x11, 0x44, 0x13, 0x2f, 0x35, 0xe2, 0x06, 0x87, 0x35, 0x64,
 	}
 	require.Equal(t, seed, NewSeedFromMnemonic(mnemonic, ""))
+}
+
+type pathTestCase struct {
+	path string
+	out  Path
+	str  string
+}
+
+var pathTests = []pathTestCase{
+	{
+		path: "",
+		str:  "m",
+		out:  Path{},
+	},
+	{
+		path: "m",
+		str:  "m",
+		out:  Path{},
+	},
+	{
+		path: "m/1",
+		str:  "m/1",
+		out:  Path{1},
+	},
+	{
+		path: "m/1'",
+		str:  "m/1'",
+		out:  Path{1 | Hard},
+	},
+	{
+		path: "1'/1000",
+		str:  "m/1'/1000",
+		out:  Path{1 | Hard, 1000},
+	},
+	{
+		path: "m/1/1000'",
+		str:  "m/1/1000'",
+		out:  Path{1, 1000 | Hard},
+	},
+}
+
+func TestParsePath(t *testing.T) {
+	for _, p := range pathTests {
+		result, err := ParsePath(p.path)
+		assert.NoError(t, err)
+		assert.Equal(t, p.out, result)
+		assert.Equal(t, p.str, result.String())
+	}
 }

@@ -37,7 +37,7 @@ func hmacSha512(data []byte, key []byte) []byte {
 
 func (s *PrivateKey) Derive(index uint32) (hdw.PrivateKey, error) {
 	data := make([]byte, 37)
-	if index&hdw.BIP32Hard == 0 {
+	if index&hdw.Hard == 0 {
 		return nil, ErrNonHardened
 	}
 	copy(data[1:], s.Seed())
@@ -47,6 +47,14 @@ func (s *PrivateKey) Derive(index uint32) (hdw.PrivateKey, error) {
 		PrivateKey: ed25519.NewKeyFromSeed(sum[:32]),
 		ChainCode:  sum[32:],
 	}, nil
+}
+
+func (s *PrivateKey) DerivePath(path hdw.Path) (hdw.PrivateKey, error) {
+	if k, err := hdw.Derive(s, path); err != nil {
+		return nil, err
+	} else {
+		return k.(hdw.PrivateKey), nil
+	}
 }
 
 func (p *PrivateKey) Chain() []byte {
@@ -78,6 +86,10 @@ func (p *PublicKey) Naked() crypto.PublicKey {
 }
 
 func (p *PublicKey) Derive(index uint32) (hdw.PublicKey, error) {
+	return nil, ErrPublic
+}
+
+func (s *PublicKey) DerivePath(path hdw.Path) (hdw.PublicKey, error) {
 	return nil, ErrPublic
 }
 

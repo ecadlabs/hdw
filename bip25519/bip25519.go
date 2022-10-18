@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"hash"
 
@@ -20,8 +19,6 @@ const (
 	PrivateKeySize = 64
 	MinSeedSize    = 32
 )
-
-var ErrKeySize = errors.New("bip25519: bad BIP32-ED25519 private key size")
 
 type PrivateKey struct {
 	ex25519.PrivateKey
@@ -124,7 +121,7 @@ func (p *PrivateKey) Derive(index uint32) (hdw.PrivateKey, error) {
 		f []byte
 	)
 
-	if index&hdw.BIP32Hard != 0 {
+	if index&hdw.Hard != 0 {
 		// hardened
 		buf := make([]byte, 69)
 		copy(buf[1:], p.PrivateKey[:ex25519.ExpandedKeySize])
@@ -176,7 +173,7 @@ func (p *PrivateKey) bytes() []byte {
 
 func keyFromBytes(src []byte) (*PrivateKey, error) {
 	if len(src) != 96 {
-		return nil, ErrKeySize
+		return nil, fmt.Errorf("bip25519: bad BIP32-ED25519 private key size %d", len(src))
 	}
 	out := PrivateKey{
 		ChainCode: make([]byte, 32),
@@ -202,6 +199,14 @@ func (p *PrivateKey) ExtendedPublic() hdw.PublicKey {
 	}
 }
 
+func (s *PrivateKey) DerivePath(path hdw.Path) (hdw.PrivateKey, error) {
+	if k, err := hdw.Derive(s, path); err != nil {
+		return nil, err
+	} else {
+		return k.(hdw.PrivateKey), nil
+	}
+}
+
 func (p *PublicKey) Chain() []byte {
 	return p.ChainCode
 }
@@ -211,7 +216,7 @@ func (p *PublicKey) Naked() crypto.PublicKey {
 }
 
 func (p *PublicKey) Derive(index uint32) (hdw.PublicKey, error) {
-	if index&hdw.BIP32Hard != 0 {
+	if index&hdw.Hard != 0 {
 		return nil, hdw.ErrHardenedPublic
 	}
 
@@ -242,4 +247,12 @@ func (p *PublicKey) Derive(index uint32) (hdw.PublicKey, error) {
 		PublicKey: point.Bytes(),
 		ChainCode: f[32:],
 	}, nil
+}
+
+func (s *PublicKey) DerivePath(path hdw.Path) (hdw.PublicKey, error) {
+	if k, err := hdw.Derive(s, path); err != nil {
+		return nil, err
+	} else {
+		return k.(hdw.PublicKey), nil
+	}
 }
