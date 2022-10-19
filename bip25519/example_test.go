@@ -1,15 +1,15 @@
-package hdw_test
+package bip25519_test
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	"crypto"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 
 	"github.com/ecadlabs/hdw"
-	ecdsax "github.com/ecadlabs/hdw/ecdsa"
+	"github.com/ecadlabs/hdw/bip25519"
 )
 
 var seedData = "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542"
@@ -22,9 +22,9 @@ func Example() {
 	}
 
 	// generate the root key
-	root, err := ecdsax.NewKeyFromSeed(seed, elliptic.P256())
-	if err != nil {
-		panic(err)
+	root := bip25519.NewKeyFromSeed(seed, nil)
+	if root == nil {
+		panic("unusable seed")
 	}
 
 	path := hdw.Path{0, 1, 2}
@@ -35,7 +35,7 @@ func Example() {
 	}
 
 	digest := sha256.Sum256([]byte("text"))
-	sig, err := priv.Sign(rand.Reader, digest[:], nil)
+	sig, err := priv.Sign(rand.Reader, digest[:], crypto.Hash(0))
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func Example() {
 	pub := priv.Public()
 
 	// verify the signature
-	ok := ecdsa.VerifyASN1(pub.(*ecdsa.PublicKey), digest[:], sig)
+	ok := ed25519.Verify(pub.(ed25519.PublicKey), digest[:], sig)
 	fmt.Printf("signature ok: %t\n", ok)
 
 	// derive the public key from the root's public
@@ -53,7 +53,7 @@ func Example() {
 		panic(err)
 	}
 	// verify the signature
-	ok = ecdsa.VerifyASN1(pub2.Naked().(*ecdsa.PublicKey), digest[:], sig)
+	ok = ed25519.Verify(pub2.Naked().(ed25519.PublicKey), digest[:], sig)
 	fmt.Printf("signature ok: %t\n", ok)
 	// Output:
 	// signature ok: true
