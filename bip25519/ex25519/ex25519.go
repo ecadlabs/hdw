@@ -1,7 +1,7 @@
 /*
-Package ex25519 provides operations with expanded (64 bit post-hash) ed25519 private keys.
-These keys can't be serialized as they aren't compatible with existing protocols and libraries.
-The package sole purpose is to add signing and public key derivation interface to BIP32-ED25519 derived keys.
+Package ex25519 provides operations with expanded 512 bit ed25519 private keys.
+These keys can't be used with most of standard crypto tools and libraries.
+The package sole purpose is to add signing and public key derivation methods to BIP32-Ed25519 derived keys.
 */
 package ex25519
 
@@ -10,7 +10,7 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"crypto/sha512"
-	"errors"
+	"fmt"
 	"io"
 
 	"filippo.io/edwards25519"
@@ -22,8 +22,6 @@ const (
 	PublicKeySize   = 32
 	SignatureSize   = 64
 )
-
-var ErrKeySize = errors.New("ex25519: bad private key size")
 
 type PrivateKey []byte
 
@@ -51,9 +49,10 @@ func derivePublic(priv []byte) []byte {
 	return point.Bytes()
 }
 
+// NewKeyFromBytes interprets src as an expanded 64 byte key and expands it further to 96 bytes by appending the derived public key to it
 func NewKeyFromBytes(src []byte) (PrivateKey, error) {
 	if len(src) != ExpandedKeySize {
-		return nil, ErrKeySize
+		return nil, fmt.Errorf("ex25519: bad private key size %d", len(src))
 	}
 
 	pub := derivePublic(src)
@@ -63,6 +62,7 @@ func NewKeyFromBytes(src []byte) (PrivateKey, error) {
 	return priv, nil
 }
 
+// Sign is identical to ed25519.PrivateKey.Sign with the hashing step omitted
 func Sign(pk PrivateKey, message []byte) []byte {
 	if len(pk) != PrivateKeySize {
 		panic("ex25519: bad private key size")

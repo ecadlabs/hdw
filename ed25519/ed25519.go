@@ -1,6 +1,8 @@
 /*
-Package ed25519 deals with SLIP-10 Ed25519 keys.
-Unlike ECDSA SLIP-10 keys these keys can be used for hardened derivation only.
+Package ed25519 deals with [SLIP-10/Ed25519] keys.
+Unlike SLIP-10/ECDSA ones these keys can be used for hardened derivation only.
+
+[SLIP-10/Ed25519]: https://github.com/satoshilabs/slips/blob/master/slip-0010.md
 */
 package ed25519
 
@@ -73,7 +75,7 @@ func (p *PrivateKey) Chain() []byte {
 	return p.ChainCode
 }
 
-// Public returns the extended public key corresponding to the receiver
+// ExtendedPublic returns the extended public key corresponding to the receiver
 func (p *PrivateKey) ExtendedPublic() hdw.PublicKey {
 	return &PublicKey{
 		PublicKey: p.Public().(ed25519.PublicKey),
@@ -112,7 +114,7 @@ func (s *PublicKey) DerivePath(path hdw.Path) (hdw.PublicKey, error) {
 	return nil, ErrPublic
 }
 
-// NewKeyFromSeed generates the root keys from the seed as specified in SLIP-10
+// NewKeyFromSeed generates the root key from the seed as specified in SLIP-10
 func NewKeyFromSeed(seed []byte) *PrivateKey {
 	if len(seed) < MinSeedSize || len(seed) > MaxSeedSize {
 		panic(fmt.Sprintf("bad seed size %d", len(seed)))

@@ -1,3 +1,9 @@
+/*
+Package ecdsa deals with [SLIP-10/ECDSA] keys.
+
+[SLIP-10/ECDSA]: https://github.com/satoshilabs/slips/blob/master/slip-0010.md
+*/
+
 package ecdsa
 
 import (
@@ -20,7 +26,9 @@ const (
 )
 
 const (
+	// MinSeedSize is the minimal allowed seed byte length
 	MinSeedSize = 16
+	// MaxSeedSize is the maximal allowed seed byte length
 	MaxSeedSize = 64
 )
 
@@ -51,11 +59,13 @@ func curveHMACKey(curve elliptic.Curve) string {
 	}
 }
 
+// PrivateKey is the extended ECDSA private key. It implements hdw.PrivateKey
 type PrivateKey struct {
 	ecdsa.PrivateKey
 	ChainCode []byte
 }
 
+// Derive returns a child key of the receiver using a single index
 func (p *PrivateKey) Derive(index uint32) (hdw.PrivateKey, error) {
 	data := make([]byte, 37)
 	if index&hdw.Hard != 0 { // hardened derivation
@@ -98,6 +108,7 @@ func (p *PrivateKey) Derive(index uint32) (hdw.PrivateKey, error) {
 	}, nil
 }
 
+// Derive returns a child key of the receiver using a full path
 func (s *PrivateKey) DerivePath(path hdw.Path) (hdw.PrivateKey, error) {
 	if k, err := hdw.Derive(s, path); err != nil {
 		return nil, err
@@ -106,13 +117,14 @@ func (s *PrivateKey) DerivePath(path hdw.Path) (hdw.PrivateKey, error) {
 	}
 }
 
-func (p *PrivateKey) Bytes() []byte {
+func (p *PrivateKey) bytes() []byte {
 	out := make([]byte, 32)
 	d := p.D.Bytes()
 	copy(out[32-len(d):], d)
 	return out
 }
 
+// ExtendedPublic returns the extended public key corresponding to the receiver
 func (p *PrivateKey) ExtendedPublic() hdw.PublicKey {
 	return &PublicKey{
 		PublicKey: p.PublicKey,
@@ -120,19 +132,23 @@ func (p *PrivateKey) ExtendedPublic() hdw.PublicKey {
 	}
 }
 
+// Chain returns the chain code
 func (p *PrivateKey) Chain() []byte {
 	return p.ChainCode
 }
 
+// Naked returns the naked private key that can be used with the standard Go crypto library
 func (p *PrivateKey) Naked() crypto.PrivateKey {
 	return &p.PrivateKey
 }
 
+// PublicKey is the extended ECDSA public key. It implements hdw.PublicKey
 type PublicKey struct {
 	ecdsa.PublicKey
 	ChainCode []byte
 }
 
+// Derive returns a child key of the receiver using a single index
 func (p *PublicKey) Derive(index uint32) (hdw.PublicKey, error) {
 	if index&hdw.Hard != 0 {
 		return nil, hdw.ErrHardenedPublic
@@ -171,18 +187,22 @@ func (p *PublicKey) Derive(index uint32) (hdw.PublicKey, error) {
 	}, nil
 }
 
+// Bytes returns the serialized public key data in a compressed form
 func (p *PublicKey) Bytes() []byte {
 	return elliptic.MarshalCompressed(p.Curve, p.X, p.Y)
 }
 
+// Chain returns the chain code
 func (p *PublicKey) Chain() []byte {
 	return p.ChainCode
 }
 
+// Naked returns the naked public key that can be used with the standard Go crypto library
 func (p *PublicKey) Naked() crypto.PublicKey {
 	return &p.PublicKey
 }
 
+// Derive returns a child key of the receiver using a full path
 func (s *PublicKey) DerivePath(path hdw.Path) (hdw.PublicKey, error) {
 	if k, err := hdw.Derive(s, path); err != nil {
 		return nil, err
@@ -191,6 +211,8 @@ func (s *PublicKey) DerivePath(path hdw.Path) (hdw.PublicKey, error) {
 	}
 }
 
+// NewKeyFromSeed generates the root key from the seed using a custom HMAC key.
+// Can be used with custom curves.
 func NewKeyFromSeedWithHMACKey(seed []byte, curve elliptic.Curve, key string) *PrivateKey {
 	if len(seed) < MinSeedSize || len(seed) > MaxSeedSize {
 		panic(fmt.Sprintf("ecdsa: bad seed size %d", len(seed)))
@@ -227,6 +249,7 @@ func NewKeyFromSeedWithHMACKey(seed []byte, curve elliptic.Curve, key string) *P
 	}
 }
 
+// NewKeyFromSeed generates the root key from the seed as specified in SLIP-10
 func NewKeyFromSeed(seed []byte, curve elliptic.Curve) (*PrivateKey, error) {
 	key := curveHMACKey(curve)
 	if key == "" {

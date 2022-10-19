@@ -332,7 +332,7 @@ func TestEDDSA(t *testing.T) {
 							assert.Equal(t, mustHex(k.chain), result.(*PrivateKey).ChainCode)
 						}
 						if k.private != "" {
-							assert.Equal(t, mustHex(k.private), result.(*PrivateKey).Bytes())
+							assert.Equal(t, mustHex(k.private), result.(*PrivateKey).bytes())
 						}
 						if k.public != "" {
 							assert.Equal(t, mustHex(k.public), result.ExtendedPublic().(*PublicKey).Bytes())
