@@ -13,8 +13,8 @@ The module implements
 ## Master seed generation
 
 ```go
-	mnemonic := "nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura"
-	seed := hdw.NewSeedFromMnemonic(mnemonic, "")
+mnemonic := "nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura"
+seed := hdw.NewSeedFromMnemonic(mnemonic, "")
 ```
 
 ## SLIP-10 / ECDSA
